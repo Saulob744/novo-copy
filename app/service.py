@@ -31,13 +31,12 @@ def run_copy(source_url, dest_url, selected_tables=None, custom_query=None, chun
             print(f"✨ Banco '{db_name}' criado.")
 
             # 2. Conecta no banco NOVO para deletar o schema public
-            # Precisamos conectar especificamente nele para conseguir dropar o schema dele
+           
             engine_new_db = create_engine(dest_url, isolation_level="AUTOCOMMIT")
             with engine_new_db.connect() as conn:
                 # O CASCADE garante que se houver algo (mesmo vazio), ele remove tudo
                 conn.execute(text('DROP SCHEMA IF EXISTS public CASCADE'))
-                # Opcional: Re-criar o public vazio se o seu script de cópia esperar que ele exista
-                # conn.execute(text('CREATE SCHEMA public')) 
+                
             
             print(f"🗑️ Schema 'public' removido de '{db_name}'.")
         # ------------------------------------------------------------
