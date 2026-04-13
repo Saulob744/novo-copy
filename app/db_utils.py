@@ -104,7 +104,7 @@ def copy_schema(source_engine: Engine, dest_engine: Engine, schema: str) -> None
     meta = sa.MetaData()
     meta.reflect(bind=source_engine, schema=schema)
 
-    # 🔥 remove default problemático (sequence)
+    #  default problemático (sequence)
     for table in meta.tables.values():
         for col in table.columns:
             if col.server_default and "nextval" in str(col.server_default).lower():
@@ -117,7 +117,7 @@ def copy_schema(source_engine: Engine, dest_engine: Engine, schema: str) -> None
 
 
 def fetch_rows_streaming(engine: Engine, table_name: str, schema: str, chunk_size: int = 1000):
-    """Leitura em streaming (não explode memória)."""
+    """Leitura em streaming ."""
     with engine.connect() as conn:
         result = conn.execution_options(stream_results=True).execute(
             text(f'SELECT * FROM "{schema}"."{table_name}"')
