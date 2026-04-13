@@ -1,143 +1,144 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-br">
-<head>
-<meta charset="UTF-8">
-<title>DB Copier</title>
+  <head>
+    <meta charset="UTF-8" />
+    <title>DB Copier</title>
+    <style>
+      body {
+        font-family: Arial;
+        background: #0f172a;
+        color: white;
+        padding: 20px;
+      }
+      .container {
+        max-width: 800px;
+        margin: auto;
+      }
+      .card {
+        background: #1e293b;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+      }
+      input,
+      textarea {
+        width: 100%;
+        padding: 10px;
+        margin: 5px 0;
+        border-radius: 6px;
+        border: none;
+        background: #0f172a;
+        color: white;
+        box-sizing: border-box;
+      }
+      button {
+        padding: 15px;
+        width: 100%;
+        background: #22c55e;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        color: white;
+        font-weight: bold;
+      }
+      #statusBox {
+        margin-top: 10px;
+        background: #020617;
+        padding: 15px;
+        border-radius: 6px;
+        border-left: 4px solid #22c55e;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🚀 DB Copier</h1>
+      <form id="form">
+        <div class="card">
+          <h2>Origem (Source)</h2>
+          <input name="src_user" placeholder="Usuário Postgres" />
+          <input name="src_pass" type="password" placeholder="Senha" />
+          <input
+            name="src_host"
+            placeholder="Host (Ex: host.docker.internal)"
+          />
+          <input name="src_port" value="5432" />
+          <input name="src_db" placeholder="Banco de Dados" />
+        </div>
 
-<style>
-body {
-    font-family: Arial;
-    background: #0f172a;
-    color: white;
-    padding: 20px;
-}
+        <div class="card">
+          <h2>Destino (Destination)</h2>
+          <input name="dst_user" placeholder="Usuário Postgres" />
+          <input name="dst_pass" type="password" placeholder="Senha" />
+          <input
+            name="dst_host"
+            placeholder="Host (Ex: host.docker.internal)"
+          />
+          <input name="dst_port" value="5432" />
+          <input name="dst_db" placeholder="Banco de Dados" />
+        </div>
 
-.container {
-    max-width: 900px;
-    margin: auto;
-}
+        <div class="card">
+          <h2>Config</h2>
+          <input name="tables" placeholder="Tabelas (opcional: tab1, tab2)" />
+          <input name="chunk_size" value="1000" />
+          <textarea
+            name="query"
+            placeholder="Query manual (opcional)"
+          ></textarea>
+        </div>
+        <button type="submit">🚀 Iniciar</button>
+      </form>
 
-.card {
-    background: #1e293b;
-    padding: 20px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-}
+      <div class="card">
+        <h2>Status</h2>
+        <div id="statusBox">Aguardando...</div>
+      </div>
+    </div>
 
-input, textarea {
-    width: 100%;
-    padding: 10px;
-    margin: 5px 0;
-    border-radius: 6px;
-    border: none;
-    background: #0f172a;
-    color: white;
-}
+    <script>
+      const form = document.getElementById("form");
+      const statusBox = document.getElementById("statusBox");
 
-button {
-    padding: 15px;
-    width: 100%;
-    background: #22c55e;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-}
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        statusBox.innerHTML = "🛠 Preparando...";
 
-#statusBox {
-    margin-top: 10px;
-    background: #020617;
-    padding: 10px;
-    border-radius: 6px;
-}
-</style>
+        const fd = new FormData(form);
 
-</head>
-<body>
+        // MONTAGEM DA URL (Resolve Erro 422)
+        const sUrl = `postgresql://${fd.get("src_user")}:${fd.get("src_pass")}@${fd.get("src_host")}:${fd.get("src_port")}/${fd.get("src_db")}`;
+        const dUrl = `postgresql://${fd.get("dst_user")}:${fd.get("dst_pass")}@${fd.get("dst_host")}:${fd.get("dst_port")}/${fd.get("dst_db")}`;
 
-<div class="container">
+        const payload = new FormData();
+        payload.append("source", sUrl);
+        payload.append("dest", dUrl);
+        payload.append("tables", fd.get("tables"));
+        payload.append("chunk_size", fd.get("chunk_size"));
+        payload.append("query", fd.get("query"));
 
-<h1>🚀 DB Copier</h1>
+        await fetch("/run", { method: "POST", body: payload });
+        monitorar();
+      });
 
-<form id="form">
+      function monitorar() {
+        const interval = setInterval(async () => {
+          const res = await fetch("/status");
+          const data = await res.json();
 
-<div class="card">
-<h2>Origem</h2>
-<input name="src_user" placeholder="Usuário">
-<input name="src_pass" type="password" placeholder="Senha">
-<input name="src_host" placeholder="Host">
-<input name="src_port" value="5432">
-<input name="src_db" placeholder="Banco">
-</div>
-
-<div class="card">
-<h2>Destino</h2>
-<input name="dst_user" placeholder="Usuário">
-<input name="dst_pass" type="password" placeholder="Senha">
-<input name="dst_host" placeholder="Host">
-<input name="dst_port" value="5432">
-<input name="dst_db" placeholder="Banco">
-</div>
-
-<div class="card">
-<h2>Config</h2>
-<input name="tables" placeholder="Tabela1, tabela2">
-<input name="chunk_size" value="1000">
-<textarea name="query"></textarea>
-</div>
-
-<button type="submit">🚀 Iniciar</button>
-
-</form>
-
-<div class="card">
-<h2>Status</h2>
-<div id="statusBox">Aguardando...</div>
-</div>
-
-</div>
-
-<script>
-const form = document.getElementById("form");
-const statusBox = document.getElementById("statusBox");
-
-form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    statusBox.innerHTML = "Iniciando...";
-
-    const formData = new FormData(form);
-
-    await fetch("/run", {
-        method: "POST",
-        body: formData
-    });
-
-    monitorar();
-});
-
-function monitorar() {
-    const interval = setInterval(async () => {
-        const res = await fetch("/status");
-        const data = await res.json();
-
-        if (data.error) {
+          if (data.error) {
             statusBox.innerHTML = "❌ " + data.error;
             clearInterval(interval);
             return;
-        }
+          }
 
-        statusBox.innerHTML = `
-            ${data.message} <br>
-            Progresso: ${data.progress}
-        `;
+          statusBox.innerHTML = `<b>${data.message}</b> <br> Progresso: ${data.progress}`;
 
-        if (!data.running) {
+          if (!data.running && data.progress === "100%") {
             clearInterval(interval);
-        }
-
-    }, 1000);
-}
-</script>
-
-</body>
+          }
+        }, 1000);
+      }
+    </script>
+  </body>
 </html>

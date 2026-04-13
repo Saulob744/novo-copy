@@ -11,16 +11,16 @@ _TABLE_CACHE = {}
 
 
 def connect(url: str) -> Engine:
-    """Conecta ao banco com boas práticas."""
     try:
         engine = create_engine(
             url,
             pool_pre_ping=True,
             pool_size=5,
             max_overflow=10,
-            future=True
+            future=True,
+            # ESTA LINHA É O REMÉDIO PARA O 'ã':
+            connect_args={"options": "-c client_encoding=utf8"}
         )
-        logger.info(f"Conectado com sucesso: {url}")
         return engine
     except Exception as e:
         logger.error(f"Erro ao conectar: {e}")

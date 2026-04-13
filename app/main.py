@@ -5,30 +5,36 @@ from app import service
 import threading
 
 app = FastAPI()
-
 templates = Jinja2Templates(directory="app/templates")
 
+# Variável global para o status (Resolve o Status)
+PROGRESSO = {"message": "Aguardando...", "progress": "0%", "running": False, "error": None}
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
     return templates.TemplateResponse(
-        "index.html",
-        {"request": request}
+        request=request, 
+        name="index.html"
     )
 
+@app.get("/status")
+def get_status():
+    return PROGRESSO
 
 @app.post("/run")
 def run(
-    request: Request,
     source: str = Form(...),
     dest: str = Form(...),
     tables: str = Form(""),
     query: str = Form(""),
     chunk_size: int = Form(1000)
 ):
+    global PROGRESSO
+    PROGRESSO = {"message": "🚀 Iniciando...", "progress": "0%", "running": True, "error": None}
 
     table_list = [t.strip() for t in tables.split(",") if t.strip()]
 
+    # Dispara o serviço em segundo plano
     thread = threading.Thread(
         target=service.run_copy,
         args=(source, dest, table_list, query, chunk_size),
@@ -36,11 +42,4 @@ def run(
     )
     thread.start()
 
-    return {
-        "status": "🚀 Rodando em background",
-        "source": source,
-        "dest": dest,
-        "chunk_size": chunk_size,
-        "tables": table_list,
-        "query": query or "nenhuma"
-    }
+    return {"status": "🚀 Rodando em background"}
